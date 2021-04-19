@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/index.ts",
-    "start:watch": "tsc -w",
-    "start:run": "node src/index.ts",
+    "start:watch": "tsc",
+    "start:run": "node dist/index.js",
     "start": "concurrently npm:start:*",
     "create:migration": "mikro-orm migration:create"
   },
