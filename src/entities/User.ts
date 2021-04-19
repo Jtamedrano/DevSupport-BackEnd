@@ -3,7 +3,7 @@ import { Field, Int, ObjectType } from "type-graphql";
 
 @ObjectType()
 @Entity()
-export class Ticket {
+export class User {
   @Field(() => Int)
   @PrimaryKey()
   id!: number;
@@ -17,10 +17,9 @@ export class Ticket {
   updatedAt = new Date();
 
   @Field(() => String)
-  @Property({ type: "text" })
-  title!: string;
+  @Property({ type: "text", unique: true })
+  username!: string;
 
-  @Field(() => Boolean)
-  @Property({ type: "boolean", default: false })
-  resolved: boolean;
+  @Property({ type: "text" })
+  password: string;
 }
