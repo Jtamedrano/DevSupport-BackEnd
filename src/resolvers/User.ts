@@ -41,17 +41,17 @@ class UserResponse {
 @Resolver()
 export class UserResolver {
   @Query(() => User, { nullable: true })
-  async me(@Ctx() { em, req }: MyContext) {
+  async me(@Ctx() { req }: MyContext) {
     if (!req.session._userId) {
       return null;
     }
-    const user = await em.findOne(User, { id: req.session._userId });
+    const user = await User.findOne(req.session._userId);
     return user;
   }
+
   @Mutation(() => UserResponse)
   async register(
-    @Arg("options") options: UsernamePasswordInput,
-    @Ctx() { em }: MyContext
+    @Arg("options") options: UsernamePasswordInput
   ): Promise<UserResponse> {
     if (options.username.length <= 2) {
       return {
@@ -65,27 +65,29 @@ export class UserResolver {
     }
 
     const hashedPassword = await argon2.hash(options.password);
-    const user = em.create(User, {
-      username: options.username,
-      password: hashedPassword,
-    });
     try {
-      await em.persistAndFlush(user);
+      const user = await User.create({
+        username: options.username,
+        password: hashedPassword,
+      }).save();
+      return { user };
     } catch (error) {
       if (error.code === "23505" || error.detail.includes("already exist")) {
         return {
           errors: [{ field: "username", message: "username already taken" }],
         };
       }
+      return {
+        errors: [{ field: "unknown", message: error.message }],
+      };
     }
-    return { user };
   }
   @Mutation(() => UserResponse)
   async login(
     @Arg("options") options: UsernamePasswordInput,
-    @Ctx() { em, req }: MyContext
+    @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
-    const user = await em.findOne(User, { username: options.username });
+    const user = await User.findOne({ username: options.username });
     if (!user) {
       return {
         errors: [
