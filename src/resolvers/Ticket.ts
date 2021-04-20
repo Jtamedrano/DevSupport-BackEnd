@@ -1,7 +1,6 @@
 import "reflect-metadata";
 import { Ticket } from "../entities/Ticket";
-import { MyContext } from "src/types";
-import { Arg, Ctx, Mutation, Query, Resolver } from "type-graphql";
+import { Arg, Mutation, Query, Resolver } from "type-graphql";
 
 @Resolver()
 export class TicketResolver {
@@ -9,50 +8,40 @@ export class TicketResolver {
   /**
    * Gets all the tickets from db
    */
-  tickets(@Ctx() { em }: MyContext): Promise<Ticket[]> {
-    return em.find(Ticket, {});
+  tickets(): Promise<Ticket[]> {
+    return Ticket.find();
   }
 
   @Query(() => Ticket, { nullable: true })
-  ticketById(
-    @Arg("id") id: number,
-    @Ctx() { em }: MyContext
-  ): Promise<Ticket | null> {
-    return em.findOne(Ticket, { id });
+  ticketById(@Arg("id") id: number): Promise<Ticket | undefined> {
+    return Ticket.findOne(id);
   }
 
   @Mutation(() => Ticket)
-  async createTicket(
-    @Arg("title") title: string,
-    @Ctx() { em }: MyContext
-  ): Promise<Ticket> {
-    const newTicket = em.create(Ticket, {
+  async createTicket(@Arg("title") title: string): Promise<Ticket> {
+    return Ticket.create({
       title,
-    });
-    await em.persistAndFlush(newTicket);
-    return newTicket;
+    }).save();
   }
+
   @Mutation(() => Ticket)
   async updatePost(
     @Arg("id") id: number,
-    @Arg("title") title: string,
-    @Ctx() { em }: MyContext
-  ): Promise<Ticket | null> {
-    const ticket = await em.findOne(Ticket, { id });
+    @Arg("title") title: string
+  ): Promise<Ticket | undefined> {
+    const ticket = await Ticket.findOne(id);
     if (!ticket) {
-      return null;
+      return undefined;
     }
-    ticket.title = title;
-    await em.persistAndFlush(ticket);
-    return ticket;
+    if (typeof title !== undefined) {
+      await Ticket.update({ id }, { title });
+    }
+    return Ticket.findOne(id);
   }
   @Mutation(() => Boolean)
-  async deletePost(
-    @Arg("id") id: number,
-    @Ctx() { em }: MyContext
-  ): Promise<boolean> {
+  async deletePost(@Arg("id") id: number): Promise<boolean> {
     try {
-      await em.nativeDelete(Ticket, { id });
+      await Ticket.delete(id);
     } catch (error) {
       return false;
     }
