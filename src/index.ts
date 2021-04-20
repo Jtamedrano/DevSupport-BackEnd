@@ -68,6 +68,8 @@ const main = async () => {
       validate: false,
     }),
     context: ({ req, res }): MyContext => ({ req, res }),
+    introspection: true,
+    playground: true,
   });
 
   apolloServer.applyMiddleware({ app });
