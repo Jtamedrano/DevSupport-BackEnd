@@ -5,21 +5,23 @@ import path from "path";
 import { User } from "./entities/User";
 import dotenv from "dotenv";
 
-dotenv.config({ path: "./.env" });
+const env = dotenv.config({ path: "./.env" });
 
 const dbConfig: Parameters<typeof MikroORM.init>[0] = __prod__
   ? {
-      clientUrl: process.env.DATABASE_URL,
+      host: env.parsed?.DB_HOST,
+      dbName: env.parsed?.DB,
+      port: Number(env.parsed?.DB_PORT),
     }
   : {
       dbName: "dev_support",
-      user: process.env.DBUSER,
-      password: process.env.DBPSWD,
     };
 
 console.log(dbConfig);
 
 const config = {
+  user: env.parsed?.DB_USER,
+  password: env.parsed?.DB_PSWD,
   debug: !__prod__,
   type: "postgresql",
   ...dbConfig,
