@@ -51,7 +51,8 @@ export class UserResolver {
 
   @Mutation(() => UserResponse)
   async register(
-    @Arg("options") options: UsernamePasswordInput
+    @Arg("options") options: UsernamePasswordInput,
+    @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
     if (options.username.length <= 2) {
       return {
@@ -67,16 +68,20 @@ export class UserResolver {
     const hashedPassword = await argon2.hash(options.password);
     try {
       const user = await User.create({
-        username: options.username,
+        username: options.username.toLowerCase(),
         password: hashedPassword,
       }).save();
-      return { user };
+      req.session._userId = user.id;
+      return {
+        user,
+      };
     } catch (error) {
       if (error.code === "23505" || error.detail.includes("already exist")) {
         return {
           errors: [{ field: "username", message: "username already taken" }],
         };
       }
+      console.log(error);
       return {
         errors: [{ field: "unknown", message: error.message }],
       };
@@ -87,7 +92,9 @@ export class UserResolver {
     @Arg("options") options: UsernamePasswordInput,
     @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
-    const user = await User.findOne({ username: options.username });
+    const user = await User.findOne({
+      username: options.username.toLowerCase(),
+    });
     if (!user) {
       return {
         errors: [
